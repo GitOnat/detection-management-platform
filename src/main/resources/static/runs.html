@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <title>Detection Platform – Test runs</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav>
+    <a class="nav-brand" href="index.html">Detection Platform</a>
+    <div class="nav-links">
+        <a href="index.html">Dashboard</a>
+        <a href="tests.html">Tests</a>
+        <a href="runs.html" class="active">Test runs</a>
+        <a href="techniques.html">MITRE teknikker</a>
+    </div>
+</nav>
+
+<div class="container">
+    <h1>Test runs</h1>
+
+    <div class="form-card">
+        <h2>Log ny kørsel</h2>
+        <div id="run-alert" class="alert"></div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>Test</label>
+                <select id="run-test">
+                    <option value="">Vælg test...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Dato for kørsel</label>
+                <input type="date" id="run-date">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>Resultat</label>
+                <select id="run-result">
+                    <option value="DETECTED">Detected</option>
+                    <option value="NOT_DETECTED">Not detected</option>
+                    <option value="PARTIAL">Partial</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Detektionsværktøj</label>
+                <input type="text" id="run-tool" placeholder="f.eks. Microsoft Defender">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Noter</label>
+            <textarea id="run-notes" placeholder="Hvad skete der? Hvornår kom alertet? Hvad blev logget?"></textarea>
+        </div>
+
+        <button class="btn btn-primary" onclick="createRun()">Log kørsel</button>
+    </div>
+
+    <div class="section-label">Alle kørsler</div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Test</th>
+                    <th>Teknik</th>
+                    <th>Dato</th>
+                    <th>Resultat</th>
+                    <th>Værktøj</th>
+                    <th>Noter</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="runs-table">
+                <tr><td colspan="7" class="empty">Indlæser...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+async function loadPage() {
+    const [tests, runs] = await Promise.all([fetchTests(), fetchRuns()]);
+
+    const select = document.getElementById('run-test');
+    tests.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.id;
+        opt.textContent = `${t.name} (${t.technique.techniqueId})`;
+        select.appendChild(opt);
+    });
+
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('run-date').value = today;
+
+    renderRuns(runs);
+}
+
+function renderRuns(runs) {
+    const tbody = document.getElementById('runs-table');
+    if (runs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty">Ingen kørsler logget endnu</td></tr>';
+        return;
+    }
+    const sorted = [...runs].reverse();
+    tbody.innerHTML = sorted.map(r => `
+        <tr>
+            <td>${r.test.name}</td>
+            <td><span class="mitre-id">${r.test.technique.techniqueId}</span></td>
+            <td>${formatDate(r.runDate)}</td>
+            <td>${resultBadge(r.result)}</td>
+            <td>${r.detectionTool || '–'}</td>
+            <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${r.notes || ''}">${r.notes || '–'}</td>
+            <td>
+                <button class="btn btn-sm btn-danger" onclick="deleteRun(${r.id})">Slet</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+async function createRun() {
+    const testId = document.getElementById('run-test').value;
+    const runDate = document.getElementById('run-date').value;
+    const result = document.getElementById('run-result').value;
+    const detectionTool = document.getElementById('run-tool').value.trim();
+    const notes = document.getElementById('run-notes').value.trim();
+
+    if (!testId || !runDate) {
+        showAlert('run-alert', 'error', 'Vælg venligst en test og en dato.');
+        return;
+    }
+
+    const res = await fetch(`${API}/runs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ testId: parseInt(testId), runDate, result, detectionTool, notes })
+    });
+
+    if (res.ok) {
+        showAlert('run-alert', 'success', 'Kørsel logget!');
+        document.getElementById('run-notes').value = '';
+        document.getElementById('run-tool').value = '';
+        renderRuns(await fetchRuns());
+    } else {
+        showAlert('run-alert', 'error', 'Noget gik galt. Prøv igen.');
+    }
+}
+
+async function deleteRun(id) {
+    if (!confirm('Slet denne kørsel?')) return;
+    await fetch(`${API}/runs/${id}`, { method: 'DELETE' });
+    renderRuns(await fetchRuns());
+}
+
+loadPage();
+</script>
+</body>
+</html>

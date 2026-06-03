@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <title>Detection Platform – Tests</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav>
+    <a class="nav-brand" href="index.html">Detection Platform</a>
+    <div class="nav-links">
+        <a href="index.html">Dashboard</a>
+        <a href="tests.html" class="active">Tests</a>
+        <a href="runs.html">Test runs</a>
+        <a href="techniques.html">MITRE teknikker</a>
+    </div>
+</nav>
+
+<div class="container">
+    <h1>Detection tests</h1>
+
+    <div class="form-card">
+        <h2>Opret ny test</h2>
+        <div id="test-alert" class="alert"></div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>Navn</label>
+                <input type="text" id="test-name" placeholder="f.eks. PowerShell Encoded Command">
+            </div>
+            <div class="form-group">
+                <label>MITRE-teknik</label>
+                <select id="test-technique">
+                    <option value="">Vælg teknik...</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>Type</label>
+                <select id="test-type">
+                    <option value="CUSTOM">Custom</option>
+                    <option value="ART">ART</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Platform</label>
+                <input type="text" id="test-platform" placeholder="f.eks. Windows 10">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Beskrivelse</label>
+            <textarea id="test-description" placeholder="Kort beskrivelse af hvad testen gør..."></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>YAML-indhold</label>
+            <textarea class="yaml" id="test-yaml" placeholder="Indsæt YAML her..."></textarea>
+        </div>
+
+        <button class="btn btn-primary" onclick="createTest()">Opret test</button>
+    </div>
+
+    <div class="section-label">Alle tests</div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Navn</th>
+                    <th>Teknik</th>
+                    <th>Type</th>
+                    <th>Platform</th>
+                    <th>Oprettet</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="tests-table">
+                <tr><td colspan="6" class="empty">Indlæser...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+async function loadPage() {
+    const [techniques, tests] = await Promise.all([fetchTechniques(), fetchTests()]);
+
+    const select = document.getElementById('test-technique');
+    techniques.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.id;
+        opt.textContent = `${t.techniqueId} – ${t.name}`;
+        select.appendChild(opt);
+    });
+
+    renderTests(tests);
+}
+
+function renderTests(tests) {
+    const tbody = document.getElementById('tests-table');
+    if (tests.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty">Ingen tests oprettet endnu</td></tr>';
+        return;
+    }
+    tbody.innerHTML = tests.map(t => `
+        <tr>
+            <td>${t.name}</td>
+            <td><span class="mitre-id">${t.technique.techniqueId}</span>${t.technique.name}</td>
+            <td>${typeBadge(t.testType)}</td>
+            <td>${t.platform || '–'}</td>
+            <td>${formatDate(t.createdAt)}</td>
+            <td>
+                <button class="btn btn-sm btn-danger" onclick="deleteTest(${t.id})">Slet</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+async function createTest() {
+    const name = document.getElementById('test-name').value.trim();
+    const techniqueId = document.getElementById('test-technique').value;
+    const testType = document.getElementById('test-type').value;
+    const platform = document.getElementById('test-platform').value.trim();
+    const description = document.getElementById('test-description').value.trim();
+    const yamlContent = document.getElementById('test-yaml').value.trim();
+
+    if (!name || !techniqueId) {
+        showAlert('test-alert', 'error', 'Udfyld venligst navn og teknik.');
+        return;
+    }
+
+    const res = await fetch(`${API}/tests`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, techniqueId: parseInt(techniqueId), testType, platform, description, yamlContent })
+    });
+
+    if (res.ok) {
+        showAlert('test-alert', 'success', 'Test oprettet!');
+        document.getElementById('test-name').value = '';
+        document.getElementById('test-yaml').value = '';
+        document.getElementById('test-description').value = '';
+        renderTests(await fetchTests());
+    } else {
+        showAlert('test-alert', 'error', 'Noget gik galt. Prøv igen.');
+    }
+}
+
+async function deleteTest(id) {
+    if (!confirm('Er du sikker på at du vil slette denne test?')) return;
+    await fetch(`${API}/tests/${id}`, { method: 'DELETE' });
+    renderTests(await fetchTests());
+}
+
+loadPage();
+</script>
+</body>
+</html>

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <title>Detection Platform – Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav>
+    <a class="nav-brand" href="index.html">Detection Platform</a>
+    <div class="nav-links">
+        <a href="index.html" class="active">Dashboard</a>
+        <a href="tests.html">Tests</a>
+        <a href="runs.html">Test runs</a>
+        <a href="techniques.html">MITRE teknikker</a>
+    </div>
+</nav>
+
+<div class="container">
+    <h1>Dashboard</h1>
+
+    <div class="stats">
+        <div class="stat-card">
+            <div class="label">Tests i alt</div>
+            <div class="value" id="stat-tests">–</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Test runs i alt</div>
+            <div class="value" id="stat-runs">–</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Detected</div>
+            <div class="value green" id="stat-detected">–</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Not detected</div>
+            <div class="value red" id="stat-not">–</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Partial</div>
+            <div class="value amber" id="stat-partial">–</div>
+        </div>
+    </div>
+
+    <div class="section-label">MITRE ATT&CK coverage</div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Teknik</th>
+                    <th>Taktik</th>
+                    <th>Bedste resultat</th>
+                    <th>Antal kørsler</th>
+                </tr>
+            </thead>
+            <tbody id="coverage-table">
+                <tr><td colspan="4" class="empty">Indlæser...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section-label">Seneste test runs</div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Test</th>
+                    <th>Type</th>
+                    <th>Dato</th>
+                    <th>Resultat</th>
+                    <th>Værktøj</th>
+                </tr>
+            </thead>
+            <tbody id="recent-runs">
+                <tr><td colspan="5" class="empty">Indlæser...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+async function loadDashboard() {
+    const [tests, runs, coverage] = await Promise.all([
+        fetchTests(),
+        fetchRuns(),
+        fetchCoverage()
+    ]);
+
+    document.getElementById('stat-tests').textContent = tests.length;
+    document.getElementById('stat-runs').textContent = runs.length;
+    document.getElementById('stat-detected').textContent = runs.filter(r => r.result === 'DETECTED').length;
+    document.getElementById('stat-not').textContent = runs.filter(r => r.result === 'NOT_DETECTED').length;
+    document.getElementById('stat-partial').textContent = runs.filter(r => r.result === 'PARTIAL').length;
+
+    const coverageTable = document.getElementById('coverage-table');
+    if (coverage.length === 0) {
+        coverageTable.innerHTML = '<tr><td colspan="4" class="empty">Ingen data endnu</td></tr>';
+    } else {
+        coverageTable.innerHTML = coverage.map(c => `
+            <tr>
+                <td>${c.techniqueId} – ${c.name}</td>
+                <td>${c.tactic}</td>
+                <td>${resultBadge(c.bestResult)}</td>
+                <td>${c.runCount}</td>
+            </tr>
+        `).join('');
+    }
+
+    const recentTable = document.getElementById('recent-runs');
+    const recent = runs.slice(-10).reverse();
+    if (recent.length === 0) {
+        recentTable.innerHTML = '<tr><td colspan="5" class="empty">Ingen test runs endnu</td></tr>';
+    } else {
+        recentTable.innerHTML = recent.map(r => `
+            <tr>
+                <td>${r.test.name}</td>
+                <td>${typeBadge(r.test.testType)}</td>
+                <td>${formatDate(r.runDate)}</td>
+                <td>${resultBadge(r.result)}</td>
+                <td>${r.detectionTool || '–'}</td>
+            </tr>
+        `).join('');
+    }
+}
+
+loadDashboard();
+</script>
+</body>
+</html>

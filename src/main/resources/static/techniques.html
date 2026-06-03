@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <title>Detection Platform – MITRE teknikker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav>
+    <a class="nav-brand" href="index.html">Detection Platform</a>
+    <div class="nav-links">
+        <a href="index.html">Dashboard</a>
+        <a href="tests.html">Tests</a>
+        <a href="runs.html">Test runs</a>
+        <a href="techniques.html" class="active">MITRE teknikker</a>
+    </div>
+</nav>
+
+<div class="container">
+    <h1>MITRE teknikker</h1>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Navn</th>
+                    <th>Taktik</th>
+                    <th>Beskrivelse</th>
+                    <th>Link</th>
+                </tr>
+            </thead>
+            <tbody id="techniques-table">
+                <tr><td colspan="5" class="empty">Indlæser...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+async function loadPage() {
+    const techniques = await fetchTechniques();
+    const tbody = document.getElementById('techniques-table');
+
+    if (techniques.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty">Ingen teknikker fundet</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = techniques.map(t => `
+        <tr>
+            <td><span class="mitre-id">${t.techniqueId}</span></td>
+            <td>${t.name}</td>
+            <td>${t.tactic}</td>
+            <td style="max-width:300px; color:#666;">${t.description || '–'}</td>
+            <td>
+                ${t.mitreUrl
+                    ? `<a href="${t.mitreUrl}" target="_blank" class="btn btn-sm">MITRE ↗</a>`
+                    : '–'
+                }
+            </td>
+        </tr>
+    `).join('');
+}
+
+loadPage();
+</script>
+</body>
+</html>
