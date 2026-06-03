@@ -3,9 +3,9 @@ USE detection_platform;
 
 CREATE TABLE IF NOT EXISTS mitre_technique (
     id            INT AUTO_INCREMENT PRIMARY KEY,
-    technique_id  VARCHAR(10)  NOT NULL UNIQUE,  -- eks. "T1059.001"
+    technique_id  VARCHAR(10)  NOT NULL UNIQUE,
     name          VARCHAR(255) NOT NULL,
-    tactic        VARCHAR(100) NOT NULL,          -- eks. "Execution"
+    tactic        VARCHAR(100) NOT NULL,
     description   TEXT,
     mitre_url     VARCHAR(255)
 );
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS detection_test (
     test_type     ENUM('CUSTOM', 'ART') NOT NULL DEFAULT 'CUSTOM',
     description   TEXT,
     yaml_content  TEXT,
-    platform      VARCHAR(100),                   -- eks. "Windows 10"
+    platform      VARCHAR(100),
     created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (technique_id) REFERENCES mitre_technique(id)
 );
@@ -27,14 +27,14 @@ CREATE TABLE IF NOT EXISTS test_run (
     test_id         INT          NOT NULL,
     run_date        DATE         NOT NULL,
     result          ENUM('DETECTED', 'NOT_DETECTED', 'PARTIAL') NOT NULL,
-    detection_tool  VARCHAR(100),                 -- eks. "Microsoft Defender", "Sentinel"
+    detection_tool  VARCHAR(100),
     notes           TEXT,
     screenshot_path VARCHAR(255),
     logged_at       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (test_id) REFERENCES detection_test(id)
 );
 
--- Pre-populate med de MITRE-teknikker fra praktikken
+-- Pre-populated med MITRE-teknikker fra min praktik hos CIP
 INSERT IGNORE INTO mitre_technique (technique_id, name, tactic, description, mitre_url) VALUES
 ('T1016',     'System Network Configuration Discovery', 'Discovery',        'Kortlæg netværkskonfigurationer på et kompromitteret system.',          'https://attack.mitre.org/techniques/T1016/'),
 ('T1025',     'Data from Removable Media',              'Collection',       'Tilgå og eksfiltrere data fra flytbare medier som USB-enheder.',         'https://attack.mitre.org/techniques/T1025/'),

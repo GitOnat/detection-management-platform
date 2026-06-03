@@ -18,8 +18,46 @@
 </nav>
 
 <div class="container">
-    <h1>MITRE teknikker</h1>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h1 style="margin-bottom: 0;">MITRE teknikker</h1>
+        <a href="https://attack.mitre.org/" target="_blank" class="btn">Se alle MITRE ATT&CK teknikker ↗</a>
+    </div>
 
+    <div class="form-card">
+        <h2>Tilføj teknik</h2>
+        <div id="technique-alert" class="alert"></div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>Teknik ID</label>
+                <input type="text" id="t-id" placeholder="f.eks. T1078">
+            </div>
+            <div class="form-group">
+                <label>Navn</label>
+                <input type="text" id="t-name" placeholder="f.eks. Valid Accounts">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>Taktik</label>
+                <input type="text" id="t-tactic" placeholder="f.eks. Persistence">
+            </div>
+            <div class="form-group">
+                <label>MITRE URL</label>
+                <input type="text" id="t-url" placeholder="https://attack.mitre.org/techniques/T1078/">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Beskrivelse</label>
+            <textarea id="t-description" placeholder="Kort beskrivelse af teknikken..."></textarea>
+        </div>
+
+        <button class="btn btn-primary" onclick="createTechnique()">Tilføj teknik</button>
+    </div>
+
+    <div class="section-label">Alle teknikker</div>
     <div class="table-wrap">
         <table>
             <thead>
@@ -29,10 +67,11 @@
                     <th>Taktik</th>
                     <th>Beskrivelse</th>
                     <th>Link</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody id="techniques-table">
-                <tr><td colspan="5" class="empty">Indlæser...</td></tr>
+                <tr><td colspan="6" class="empty">Indlæser...</td></tr>
             </tbody>
         </table>
     </div>
@@ -41,28 +80,73 @@
 <script src="app.js"></script>
 <script>
 async function loadPage() {
-    const techniques = await fetchTechniques();
-    const tbody = document.getElementById('techniques-table');
+    renderTechniques(await fetchTechniques());
+}
 
+function renderTechniques(techniques) {
+    const tbody = document.getElementById('techniques-table');
     if (techniques.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="empty">Ingen teknikker fundet</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="empty">Ingen teknikker fundet</td></tr>';
         return;
     }
-
     tbody.innerHTML = techniques.map(t => `
         <tr>
             <td><span class="mitre-id">${t.techniqueId}</span></td>
             <td>${t.name}</td>
             <td>${t.tactic}</td>
-            <td style="max-width:300px; color:#666;">${t.description || '–'}</td>
+            <td style="max-width:260px; color:#666;">${t.description || '–'}</td>
             <td>
                 ${t.mitreUrl
                     ? `<a href="${t.mitreUrl}" target="_blank" class="btn btn-sm">MITRE ↗</a>`
                     : '–'
                 }
             </td>
+            <td>
+                <button class="btn btn-sm btn-danger" onclick="deleteTechnique(${t.id})">Slet</button>
+            </td>
         </tr>
     `).join('');
+}
+
+async function createTechnique() {
+    const techniqueId = document.getElementById('t-id').value.trim();
+    const name = document.getElementById('t-name').value.trim();
+    const tactic = document.getElementById('t-tactic').value.trim();
+    const mitreUrl = document.getElementById('t-url').value.trim();
+    const description = document.getElementById('t-description').value.trim();
+
+    if (!techniqueId || !name || !tactic) {
+        showAlert('technique-alert', 'error', 'Udfyld venligst ID, navn og taktik.');
+        return;
+    }
+
+    const res = await fetch(`${API}/techniques`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ techniqueId, name, tactic, mitreUrl, description })
+    });
+
+    if (res.ok) {
+        showAlert('technique-alert', 'success', 'Teknik tilføjet!');
+        document.getElementById('t-id').value = '';
+        document.getElementById('t-name').value = '';
+        document.getElementById('t-tactic').value = '';
+        document.getElementById('t-url').value = '';
+        document.getElementById('t-description').value = '';
+        renderTechniques(await fetchTechniques());
+    } else {
+        showAlert('technique-alert', 'error', 'Noget gik galt – tjek at ID ikke allerede findes.');
+    }
+}
+
+async function deleteTechnique(id) {
+    if (!confirm('Slet denne teknik? Det vil fejle hvis der er tests knyttet til den.')) return;
+    const res = await fetch(`${API}/techniques/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+        renderTechniques(await fetchTechniques());
+    } else {
+        alert('Kan ikke slette — der er sandsynligvis tests knyttet til denne teknik.');
+    }
 }
 
 loadPage();
