@@ -47,22 +47,6 @@ public class DetectionTestController {
         return ResponseEntity.ok(service.create(test, techniqueId));
     }
 
-    // PUT /api/tests/{id}
-    @PutMapping("/{id}")
-    public ResponseEntity<DetectionTest> update(@PathVariable Integer id,
-                                                 @RequestBody Map<String, Object> body) {
-        DetectionTest updated = new DetectionTest();
-        updated.setName((String) body.get("name"));
-        updated.setDescription((String) body.get("description"));
-        updated.setYamlContent((String) body.get("yamlContent"));
-        updated.setPlatform((String) body.get("platform"));
-        if (body.get("testType") != null) {
-            updated.setTestType(DetectionTest.TestType.valueOf((String) body.get("testType")));
-        }
-        Integer techniqueId = (Integer) body.get("techniqueId");
-        return ResponseEntity.ok(service.update(id, updated, techniqueId));
-    }
-
     // DELETE /api/tests/{id}
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Integer id) {

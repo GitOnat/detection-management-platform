@@ -35,22 +35,6 @@ public class DetectionTestService {
         return testRepository.save(test);
     }
 
-    public DetectionTest update(Integer id, DetectionTest updated, Integer techniqueId) {
-        DetectionTest existing = testRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Test ikke fundet: " + id));
-        existing.setName(updated.getName());
-        existing.setDescription(updated.getDescription());
-        existing.setYamlContent(updated.getYamlContent());
-        existing.setTestType(updated.getTestType());
-        existing.setPlatform(updated.getPlatform());
-        if (techniqueId != null) {
-            MitreTechnique technique = techniqueRepository.findById(techniqueId)
-                    .orElseThrow(() -> new RuntimeException("Teknik ikke fundet: " + techniqueId));
-            existing.setTechnique(technique);
-        }
-        return testRepository.save(existing);
-    }
-
     public void delete(Integer id) {
         testRepository.deleteById(id);
     }

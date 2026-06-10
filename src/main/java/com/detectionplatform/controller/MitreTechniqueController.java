@@ -37,15 +37,6 @@ public class MitreTechniqueController {
         return service.create(technique);
     }
 
-    // PUT /api/techniques/{id}
-    @PutMapping("/{id}")
-    public ResponseEntity<MitreTechnique> update(@PathVariable Integer id,
-                                                  @RequestBody MitreTechnique updated) {
-        return service.update(id, updated)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
     // DELETE /api/techniques/{id}
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Integer id) {

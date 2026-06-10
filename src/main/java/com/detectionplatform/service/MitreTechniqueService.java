@@ -27,17 +27,6 @@ public class MitreTechniqueService {
         return repository.save(technique);
     }
 
-    public Optional<MitreTechnique> update(Integer id, MitreTechnique updated) {
-        return repository.findById(id).map(existing -> {
-            existing.setTechniqueId(updated.getTechniqueId());
-            existing.setName(updated.getName());
-            existing.setTactic(updated.getTactic());
-            existing.setDescription(updated.getDescription());
-            existing.setMitreUrl(updated.getMitreUrl());
-            return repository.save(existing);
-        });
-    }
-
     public boolean delete(Integer id) {
         if (!repository.existsById(id)) return false;
         repository.deleteById(id);
