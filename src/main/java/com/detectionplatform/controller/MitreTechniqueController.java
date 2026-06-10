@@ -1,7 +1,7 @@
 package com.detectionplatform.controller;
 
 import com.detectionplatform.model.MitreTechnique;
-import com.detectionplatform.repository.MitreTechniqueRepository;
+import com.detectionplatform.service.MitreTechniqueService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -11,22 +11,22 @@ import java.util.List;
 @CrossOrigin(origins = "*")
 public class MitreTechniqueController {
 
-    private final MitreTechniqueRepository repository;
+    private final MitreTechniqueService service;
 
-    public MitreTechniqueController(MitreTechniqueRepository repository) {
-        this.repository = repository;
+    public MitreTechniqueController(MitreTechniqueService service) {
+        this.service = service;
     }
 
     // GET /api/techniques
     @GetMapping
     public List<MitreTechnique> getAll() {
-        return repository.findAll();
+        return service.getAll();
     }
 
     // GET /api/techniques/{id}
     @GetMapping("/{id}")
     public ResponseEntity<MitreTechnique> getById(@PathVariable Integer id) {
-        return repository.findById(id)
+        return service.getById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -34,28 +34,22 @@ public class MitreTechniqueController {
     // POST /api/techniques
     @PostMapping
     public MitreTechnique create(@RequestBody MitreTechnique technique) {
-        return repository.save(technique);
+        return service.create(technique);
     }
 
     // PUT /api/techniques/{id}
     @PutMapping("/{id}")
     public ResponseEntity<MitreTechnique> update(@PathVariable Integer id,
                                                   @RequestBody MitreTechnique updated) {
-        return repository.findById(id).map(existing -> {
-            existing.setTechniqueId(updated.getTechniqueId());
-            existing.setName(updated.getName());
-            existing.setTactic(updated.getTactic());
-            existing.setDescription(updated.getDescription());
-            existing.setMitreUrl(updated.getMitreUrl());
-            return ResponseEntity.ok(repository.save(existing));
-        }).orElse(ResponseEntity.notFound().build());
+        return service.update(id, updated)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     // DELETE /api/techniques/{id}
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Integer id) {
-        if (!repository.existsById(id)) return ResponseEntity.notFound().build();
-        repository.deleteById(id);
+        if (!service.delete(id)) return ResponseEntity.notFound().build();
         return ResponseEntity.noContent().build();
     }
 }
