@@ -74,6 +74,7 @@
                     <th>Type</th>
                     <th>Platform</th>
                     <th>Oprettet</th>
+                    <th>YAML</th>
                     <th></th>
                 </tr>
             </thead>
@@ -81,6 +82,17 @@
                 <tr><td colspan="6" class="empty">Indlæser...</td></tr>
             </tbody>
         </table>
+    </div>
+</div>
+
+<!-- YAML modal -->
+<div id="yaml-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:white; border-radius:8px; padding:24px; max-width:700px; width:90%; max-height:80vh; display:flex; flex-direction:column;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <strong id="yaml-modal-title">YAML</strong>
+            <button class="btn btn-sm" onclick="closeYaml()">Luk</button>
+        </div>
+        <pre id="yaml-modal-content" style="overflow:auto; background:#f4f4f4; padding:16px; border-radius:4px; font-size:13px; flex:1; margin:0; white-space:pre-wrap;"></pre>
     </div>
 </div>
 
@@ -97,6 +109,7 @@ async function loadPage() {
         select.appendChild(opt);
     });
 
+    allTests = tests;
     renderTests(tests);
 }
 
@@ -113,6 +126,7 @@ function renderTests(tests) {
             <td>${typeBadge(t.testType)}</td>
             <td>${t.platform || '–'}</td>
             <td>${formatDate(t.createdAt)}</td>
+            <td>${t.yamlContent ? `<button class="btn btn-sm" onclick="showYaml(${t.id})">Vis</button>` : '–'}</td>
             <td>
                 <button class="btn btn-sm btn-danger" onclick="deleteTest(${t.id})">Slet</button>
             </td>
@@ -144,7 +158,8 @@ async function createTest() {
         document.getElementById('test-name').value = '';
         document.getElementById('test-yaml').value = '';
         document.getElementById('test-description').value = '';
-        renderTests(await fetchTests());
+        allTests = await fetchTests();
+        renderTests(allTests);
     } else {
         showAlert('test-alert', 'error', 'Noget gik galt. Prøv igen.');
     }
@@ -153,8 +168,28 @@ async function createTest() {
 async function deleteTest(id) {
     if (!confirm('Er du sikker på at du vil slette denne test?')) return;
     await fetch(`${API}/tests/${id}`, { method: 'DELETE' });
-    renderTests(await fetchTests());
+    allTests = await fetchTests();
+    renderTests(allTests);
 }
+
+let allTests = [];
+
+async function showYaml(id) {
+    const test = allTests.find(t => t.id === id);
+    if (!test) return;
+    document.getElementById('yaml-modal-title').textContent = test.name;
+    document.getElementById('yaml-modal-content').textContent = test.yamlContent;
+    const modal = document.getElementById('yaml-modal');
+    modal.style.display = 'flex';
+}
+
+function closeYaml() {
+    document.getElementById('yaml-modal').style.display = 'none';
+}
+
+document.getElementById('yaml-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeYaml();
+});
 
 loadPage();
 </script>
