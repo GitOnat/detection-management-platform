@@ -2,13 +2,13 @@
 <html lang="da">
 <head>
     <meta charset="UTF-8">
-    <title>Detection Platform – Dashboard</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Detection Management Platform – Dashboard</title>
+    <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
 
 <nav>
-    <a class="nav-brand" href="index.html">Detection Platform</a>
+    <a class="nav-brand" href="index.html">Detection Management Platform</a>
     <div class="nav-links">
         <a href="index.html" class="active">Dashboard</a>
         <a href="tests.html">Tests</a>
@@ -19,6 +19,16 @@
 
 <div class="container">
     <h1>Dashboard</h1>
+
+    <div class="coverage-hero">
+        <div class="coverage-hero-text">
+            <span class="coverage-hero-count" id="stat-coverage">–</span>
+            <span class="coverage-hero-label">teknikker dækket</span>
+        </div>
+        <div class="coverage-bar-bg">
+            <div class="coverage-bar-fill" id="coverage-bar"></div>
+        </div>
+    </div>
 
     <div class="stats">
         <div class="stat-card">
@@ -82,10 +92,11 @@
 <script src="app.js"></script>
 <script>
 async function loadDashboard() {
-    const [tests, runs, coverage] = await Promise.all([
+    const [tests, runs, coverage, techniques] = await Promise.all([
         fetchTests(),
         fetchRuns(),
-        fetchCoverage()
+        fetchCoverage(),
+        fetchTechniques()
     ]);
 
     document.getElementById('stat-tests').textContent = tests.length;
@@ -93,6 +104,9 @@ async function loadDashboard() {
     document.getElementById('stat-detected').textContent = runs.filter(r => r.result === 'DETECTED').length;
     document.getElementById('stat-not').textContent = runs.filter(r => r.result === 'NOT_DETECTED').length;
     document.getElementById('stat-partial').textContent = runs.filter(r => r.result === 'PARTIAL').length;
+    const pct = techniques.length > 0 ? Math.round((coverage.length / techniques.length) * 100) : 0;
+    document.getElementById('stat-coverage').textContent = `${coverage.length}/${techniques.length}`;
+    document.getElementById('coverage-bar').style.width = `${pct}%`;
 
     const coverageTable = document.getElementById('coverage-table');
     if (coverage.length === 0) {

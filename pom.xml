@@ -12,10 +12,10 @@
     </parent>
 
     <groupId>com.detectionplatform</groupId>
-    <artifactId>detection-platform</artifactId>
+    <artifactId>detection-management-platform</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>detection-platform</name>
-    <description>Detection Engineering Platform</description>
+    <name>detection-management-platform</name>
+    <description>Detection Management Platform</description>
 
     <properties>
         <java.version>17</java.version>
