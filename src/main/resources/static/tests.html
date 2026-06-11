@@ -74,6 +74,7 @@
                     <th>Type</th>
                     <th>Platform</th>
                     <th>Oprettet</th>
+                    <th>Beskrivelse</th>
                     <th>YAML</th>
                     <th></th>
                 </tr>
@@ -82,6 +83,17 @@
                 <tr><td colspan="6" class="empty">Indlæser...</td></tr>
             </tbody>
         </table>
+    </div>
+</div>
+
+<!-- Beskrivelse modal -->
+<div id="desc-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:white; border-radius:8px; padding:24px; max-width:700px; width:90%; max-height:80vh; display:flex; flex-direction:column;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <strong id="desc-modal-title">Beskrivelse</strong>
+            <button class="btn btn-sm" onclick="closeDescription()">Luk</button>
+        </div>
+        <p id="desc-modal-content" style="overflow:auto; margin:0; white-space:pre-wrap;"></p>
     </div>
 </div>
 
@@ -126,6 +138,7 @@ function renderTests(tests) {
             <td>${typeBadge(t.testType)}</td>
             <td>${t.platform || '–'}</td>
             <td>${formatDate(t.createdAt)}</td>
+            <td>${t.description ? `<button class="btn btn-sm" onclick="showDescription(${t.id})">Vis</button>` : '–'}</td>
             <td>${t.yamlContent ? `<button class="btn btn-sm" onclick="showYaml(${t.id})">Vis</button>` : '–'}</td>
             <td>
                 <button class="btn btn-sm btn-danger" onclick="deleteTest(${t.id})">Slet</button>
@@ -186,6 +199,22 @@ async function showYaml(id) {
 function closeYaml() {
     document.getElementById('yaml-modal').style.display = 'none';
 }
+
+function showDescription(id) {
+    const test = allTests.find(t => t.id === id);
+    if (!test) return;
+    document.getElementById('desc-modal-title').textContent = test.name;
+    document.getElementById('desc-modal-content').textContent = test.description;
+    document.getElementById('desc-modal').style.display = 'flex';
+}
+
+function closeDescription() {
+    document.getElementById('desc-modal').style.display = 'none';
+}
+
+document.getElementById('desc-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeDescription();
+});
 
 document.getElementById('yaml-modal').addEventListener('click', function(e) {
     if (e.target === this) closeYaml();

@@ -81,8 +81,37 @@
     </div>
 </div>
 
+<!-- Noter modal -->
+<div id="notes-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:white; border-radius:8px; padding:24px; max-width:700px; width:90%; max-height:80vh; display:flex; flex-direction:column;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <strong id="notes-modal-title">Noter</strong>
+            <button class="btn btn-sm" onclick="closeNotes()">Luk</button>
+        </div>
+        <p id="notes-modal-content" style="overflow:auto; margin:0; white-space:pre-wrap;"></p>
+    </div>
+</div>
+
 <script src="app.js"></script>
 <script>
+let allRuns = [];
+
+function showNotes(id) {
+    const run = allRuns.find(r => r.id === id);
+    if (!run) return;
+    document.getElementById('notes-modal-title').textContent = `${run.test.name} – ${formatDate(run.runDate)}`;
+    document.getElementById('notes-modal-content').textContent = run.notes;
+    document.getElementById('notes-modal').style.display = 'flex';
+}
+
+function closeNotes() {
+    document.getElementById('notes-modal').style.display = 'none';
+}
+
+document.getElementById('notes-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeNotes();
+});
+
 async function loadPage() {
     const [tests, runs] = await Promise.all([fetchTests(), fetchRuns()]);
 
@@ -97,6 +126,7 @@ async function loadPage() {
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('run-date').value = today;
 
+    allRuns = runs;
     renderRuns(runs);
 }
 
@@ -114,7 +144,7 @@ function renderRuns(runs) {
             <td>${formatDate(r.runDate)}</td>
             <td>${resultBadge(r.result)}</td>
             <td>${r.detectionTool || '–'}</td>
-            <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${r.notes || ''}">${r.notes || '–'}</td>
+            <td>${r.notes ? `<button class="btn btn-sm" onclick="showNotes(${r.id})">Vis</button>` : '–'}</td>
             <td>
                 <button class="btn btn-sm btn-danger" onclick="deleteRun(${r.id})">Slet</button>
             </td>
@@ -144,7 +174,8 @@ async function createRun() {
         showAlert('run-alert', 'success', 'Kørsel logget!');
         document.getElementById('run-notes').value = '';
         document.getElementById('run-tool').value = '';
-        renderRuns(await fetchRuns());
+        allRuns = await fetchRuns();
+        renderRuns(allRuns);
     } else {
         showAlert('run-alert', 'error', 'Noget gik galt. Prøv igen.');
     }
@@ -153,7 +184,8 @@ async function createRun() {
 async function deleteRun(id) {
     if (!confirm('Slet denne kørsel?')) return;
     await fetch(`${API}/runs/${id}`, { method: 'DELETE' });
-    renderRuns(await fetchRuns());
+    allRuns = await fetchRuns();
+    renderRuns(allRuns);
 }
 
 loadPage();
